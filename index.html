@@ -7,32 +7,41 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
             margin: 20px;
+            background-color: #f0f0f0;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
         }
         .tool-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
             margin-bottom: 20px;
         }
         button {
-            padding: 10px 20px;
+            padding: 10px;
             font-size: 16px;
-            margin: 5px;
             border: none;
             border-radius: 5px;
-            background-color: #333;
+            background-color: #3498db;
             color: white;
             cursor: pointer;
+            transition: background-color 0.3s;
         }
         button:hover {
-            background-color: #555;
+            background-color: #2980b9;
         }
         .tool-section {
             display: none;
             text-align: center;
-            width: 100%;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             max-width: 500px;
+            width: 100%;
         }
         .tool-section.active {
             display: block;
@@ -41,6 +50,11 @@
             padding: 8px;
             margin: 5px;
             font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        h2 {
+            color: #e74c3c;
         }
         ul {
             list-style: none;
@@ -50,6 +64,13 @@
             display: flex;
             justify-content: space-between;
             margin: 5px 0;
+            padding: 5px;
+            background-color: #ecf0f1;
+            border-radius: 3px;
+        }
+        .output {
+            color: #27ae60;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -75,14 +96,14 @@
         </select>
         <input type="number" id="num2" placeholder="Number 2">
         <button onclick="calculate()">Calculate</button>
-        <p>Result: <span id="calcResult">0</span></p>
+        <p>Result: <span id="calcResult" class="output">0</span></p>
     </div>
 
     <div id="wordcounter" class="tool-section">
         <h2>Word Counter</h2>
         <textarea id="textInput" rows="5" cols="40" placeholder="Type your text here..."></textarea>
         <button onclick="countWords()">Count</button>
-        <p>Words: <span id="wordCount">0</span> | Characters: <span id="charCount">0</span></p>
+        <p>Words: <span id="wordCount" class="output">0</span> | Characters: <span id="charCount" class="output">0</span></p>
     </div>
 
     <div id="timer" class="tool-section">
@@ -90,7 +111,7 @@
         <input type="number" id="timerInput" placeholder="Seconds" min="1">
         <button onclick="startTimer()">Start</button>
         <button onclick="stopTimer()">Stop</button>
-        <p>Time Left: <span id="timerDisplay">0</span>s</p>
+        <p>Time Left: <span id="timerDisplay" class="output">0</span>s</p>
     </div>
 
     <div id="todolist" class="tool-section">
@@ -104,7 +125,8 @@
         <h2>Random Password Generator</h2>
         <input type="number" id="passLength" placeholder="Length" min="4" max="20" value="12">
         <button onclick="generatePassword()">Generate</button>
-        <p>Password: <span id="passwordOutput">Click Generate</span></p>
+        <button onclick="copyPassword()">Copy</button>
+        <p>Password: <span id="passwordOutput" class="output">Click Generate</span></p>
     </div>
 
     <div id="unitconverter" class="tool-section">
@@ -115,9 +137,13 @@
             <option value="inToCm">inches to cm</option>
             <option value="kgToLb">kg to lbs</option>
             <option value="lbToKg">lbs to kg</option>
+            <option value="cToF">°C to °F</option>
+            <option value="fToC">°F to °C</option>
+            <option value="mToFt">meters to feet</option>
+            <option value="ftToM">feet to meters</option>
         </select>
         <button onclick="convertUnit()">Convert</button>
-        <p>Result: <span id="unitResult">0</span></p>
+        <p>Result: <span id="unitResult" class="output">0</span></p>
     </div>
 
     <script>
@@ -173,10 +199,25 @@
             const taskText = document.getElementById('taskInput').value.trim();
             if (taskText) {
                 const li = document.createElement('li');
-                li.innerHTML = `${taskText} <button onclick="this.parentElement.remove()">Delete</button>`;
+                li.innerHTML = `${taskText} <button onclick="this.parentElement.remove(); saveTasks();">Delete</button>`;
                 document.getElementById('taskList').appendChild(li);
                 document.getElementById('taskInput').value = '';
+                saveTasks();
             }
+        }
+
+        function saveTasks() {
+            const tasks = Array.from(document.getElementById('taskList').children).map(li => li.childNodes[0].textContent.trim());
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        function loadTasks() {
+            const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+            tasks.forEach(task => {
+                const li = document.createElement('li');
+                li.innerHTML = `${task} <button onclick="this.parentElement.remove(); saveTasks();">Delete</button>`;
+                document.getElementById('taskList').appendChild(li);
+            });
         }
 
         function generatePassword() {
@@ -189,6 +230,13 @@
             document.getElementById('passwordOutput').textContent = password;
         }
 
+        function copyPassword() {
+            const password = document.getElementById('passwordOutput').textContent;
+            navigator.clipboard.writeText(password).then(() => {
+                alert('Password copied to clipboard!');
+            });
+        }
+
         function convertUnit() {
             const value = parseFloat(document.getElementById('unitInput').value) || 0;
             const unitType = document.getElementById('unitType').value;
@@ -197,10 +245,15 @@
             else if (unitType === 'inToCm') result = value * 2.54;
             else if (unitType === 'kgToLb') result = value * 2.20462;
             else if (unitType === 'lbToKg') result = value / 2.20462;
+            else if (unitType === 'cToF') result = (value * 9/5) + 32;
+            else if (unitType === 'fToC') result = (value - 32) * 5/9;
+            else if (unitType === 'mToFt') result = value * 3.28084;
+            else if (unitType === 'ftToM') result = value / 3.28084;
             document.getElementById('unitResult').textContent = result.toFixed(2);
         }
 
-        // Show the first tool by default
+        // Load tasks and show the first tool on page load
+        loadTasks();
         showTool('calculator');
     </script>
 </body>
