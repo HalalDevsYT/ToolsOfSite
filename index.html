@@ -8,53 +8,74 @@
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
-            background-color: #f0f0f0;
+            background: linear-gradient(135deg, #ecf0f1, #bdc3c7);
+            min-height: 100vh;
         }
         h1 {
             color: #2c3e50;
             text-align: center;
+            font-size: 2.5em;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
         }
         .tool-buttons {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 10px;
-            margin-bottom: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+            padding: 0 20px;
         }
         button {
-            padding: 10px;
+            padding: 12px;
             font-size: 16px;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             background-color: #3498db;
             color: white;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: transform 0.2s, background-color 0.3s;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
         }
         button:hover {
             background-color: #2980b9;
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(1px);
         }
         .tool-section {
             display: none;
             text-align: center;
             background-color: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            max-width: 500px;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            max-width: 600px;
             width: 100%;
+            animation: fadeIn 0.3s ease;
         }
         .tool-section.active {
             display: block;
         }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
         input, textarea, select {
-            padding: 8px;
-            margin: 5px;
+            padding: 10px;
+            margin: 8px;
             font-size: 16px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            transition: border-color 0.3s;
+        }
+        input:focus, textarea:focus, select:focus {
+            border-color: #3498db;
+            outline: none;
         }
         h2 {
             color: #e74c3c;
+            font-size: 1.8em;
+            margin-bottom: 15px;
         }
         ul {
             list-style: none;
@@ -62,15 +83,23 @@
         }
         li {
             display: flex;
+            align-items: center;
             justify-content: space-between;
-            margin: 5px 0;
-            padding: 5px;
+            margin: 8px 0;
+            padding: 10px;
             background-color: #ecf0f1;
-            border-radius: 3px;
+            border-radius: 6px;
+            transition: background-color 0.3s;
+        }
+        li.completed {
+            background-color: #dfe6e9;
+            text-decoration: line-through;
+            color: #7f8c8d;
         }
         .output {
             color: #27ae60;
             font-weight: bold;
+            font-size: 1.2em;
         }
     </style>
 </head>
@@ -141,6 +170,10 @@
             <option value="fToC">°F to °C</option>
             <option value="mToFt">meters to feet</option>
             <option value="ftToM">feet to meters</option>
+            <option value="lToGal">liters to gallons</option>
+            <option value="galToL">gallons to liters</option>
+            <option value="kmhToMph">km/h to mph</option>
+            <option value="mphToKmh">mph to km/h</option>
         </select>
         <button onclick="convertUnit()">Convert</button>
         <p>Result: <span id="unitResult" class="output">0</span></p>
@@ -199,15 +232,27 @@
             const taskText = document.getElementById('taskInput').value.trim();
             if (taskText) {
                 const li = document.createElement('li');
-                li.innerHTML = `${taskText} <button onclick="this.parentElement.remove(); saveTasks();">Delete</button>`;
+                li.innerHTML = `
+                    <input type="checkbox" onchange="toggleTask(this); saveTasks()">
+                    <span>${taskText}</span>
+                    <button onclick="this.parentElement.remove(); saveTasks()">Delete</button>
+                `;
                 document.getElementById('taskList').appendChild(li);
                 document.getElementById('taskInput').value = '';
                 saveTasks();
             }
         }
 
+        function toggleTask(checkbox) {
+            const li = checkbox.parentElement;
+            li.classList.toggle('completed', checkbox.checked);
+        }
+
         function saveTasks() {
-            const tasks = Array.from(document.getElementById('taskList').children).map(li => li.childNodes[0].textContent.trim());
+            const tasks = Array.from(document.getElementById('taskList').children).map(li => ({
+                text: li.querySelector('span').textContent,
+                completed: li.querySelector('input').checked
+            }));
             localStorage.setItem('tasks', JSON.stringify(tasks));
         }
 
@@ -215,7 +260,12 @@
             const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
             tasks.forEach(task => {
                 const li = document.createElement('li');
-                li.innerHTML = `${task} <button onclick="this.parentElement.remove(); saveTasks();">Delete</button>`;
+                li.innerHTML = `
+                    <input type="checkbox" onchange="toggleTask(this); saveTasks()" ${task.completed ? 'checked' : ''}>
+                    <span>${task.text}</span>
+                    <button onclick="this.parentElement.remove(); saveTasks()">Delete</button>
+                `;
+                if (task.completed) li.classList.add('completed');
                 document.getElementById('taskList').appendChild(li);
             });
         }
@@ -249,6 +299,10 @@
             else if (unitType === 'fToC') result = (value - 32) * 5/9;
             else if (unitType === 'mToFt') result = value * 3.28084;
             else if (unitType === 'ftToM') result = value / 3.28084;
+            else if (unitType === 'lToGal') result = value / 3.78541;
+            else if (unitType === 'galToL') result = value * 3.78541;
+            else if (unitType === 'kmhToMph') result = value / 1.60934;
+            else if (unitType === 'mphToKmh') result = value * 1.60934;
             document.getElementById('unitResult').textContent = result.toFixed(2);
         }
 
