@@ -31,14 +31,25 @@
         .tool-section {
             display: none;
             text-align: center;
+            width: 100%;
+            max-width: 500px;
         }
         .tool-section.active {
             display: block;
         }
-        input, textarea {
+        input, textarea, select {
             padding: 8px;
             margin: 5px;
             font-size: 16px;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
         }
     </style>
 </head>
@@ -48,6 +59,9 @@
         <button onclick="showTool('calculator')">Calculator</button>
         <button onclick="showTool('wordcounter')">Word Counter</button>
         <button onclick="showTool('timer')">Timer</button>
+        <button onclick="showTool('todolist')">To-Do List</button>
+        <button onclick="showTool('passwordgen')">Password Generator</button>
+        <button onclick="showTool('unitconverter')">Unit Converter</button>
     </div>
 
     <div id="calculator" class="tool-section">
@@ -77,6 +91,33 @@
         <button onclick="startTimer()">Start</button>
         <button onclick="stopTimer()">Stop</button>
         <p>Time Left: <span id="timerDisplay">0</span>s</p>
+    </div>
+
+    <div id="todolist" class="tool-section">
+        <h2>To-Do List</h2>
+        <input type="text" id="taskInput" placeholder="Add a task">
+        <button onclick="addTask()">Add</button>
+        <ul id="taskList"></ul>
+    </div>
+
+    <div id="passwordgen" class="tool-section">
+        <h2>Random Password Generator</h2>
+        <input type="number" id="passLength" placeholder="Length" min="4" max="20" value="12">
+        <button onclick="generatePassword()">Generate</button>
+        <p>Password: <span id="passwordOutput">Click Generate</span></p>
+    </div>
+
+    <div id="unitconverter" class="tool-section">
+        <h2>Unit Converter</h2>
+        <input type="number" id="unitInput" placeholder="Enter value">
+        <select id="unitType">
+            <option value="cmToIn">cm to inches</option>
+            <option value="inToCm">inches to cm</option>
+            <option value="kgToLb">kg to lbs</option>
+            <option value="lbToKg">lbs to kg</option>
+        </select>
+        <button onclick="convertUnit()">Convert</button>
+        <p>Result: <span id="unitResult">0</span></p>
     </div>
 
     <script>
@@ -126,6 +167,37 @@
 
         function stopTimer() {
             if (timerInterval) clearInterval(timerInterval);
+        }
+
+        function addTask() {
+            const taskText = document.getElementById('taskInput').value.trim();
+            if (taskText) {
+                const li = document.createElement('li');
+                li.innerHTML = `${taskText} <button onclick="this.parentElement.remove()">Delete</button>`;
+                document.getElementById('taskList').appendChild(li);
+                document.getElementById('taskInput').value = '';
+            }
+        }
+
+        function generatePassword() {
+            const length = parseInt(document.getElementById('passLength').value) || 12;
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+            let password = '';
+            for (let i = 0; i < length; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            document.getElementById('passwordOutput').textContent = password;
+        }
+
+        function convertUnit() {
+            const value = parseFloat(document.getElementById('unitInput').value) || 0;
+            const unitType = document.getElementById('unitType').value;
+            let result = 0;
+            if (unitType === 'cmToIn') result = value / 2.54;
+            else if (unitType === 'inToCm') result = value * 2.54;
+            else if (unitType === 'kgToLb') result = value * 2.20462;
+            else if (unitType === 'lbToKg') result = value / 2.20462;
+            document.getElementById('unitResult').textContent = result.toFixed(2);
         }
 
         // Show the first tool by default
